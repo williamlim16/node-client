@@ -1,17 +1,48 @@
 import requests
 import cv2
+import paho.mqtt.client as mqtt
+import time
+import datetime
 
-cam = cv2.VideoCapture(0)
 
-while True:
-    ret, image = cam.read()
-    cv2.imshow('image',image)
-    k = cv2.waitkey(1)
-    if k != 1:
-        break
+def on_message(client, userdata, message):
+    print("received message:", str(message.payload.decode("utf-8")))
 
-jisoo = open("jisoo.jpeg","rb")
 
+"""
+MQTT init
+"""
+mqttBroker = "192.168.100.17"
+client = mqtt.Client("TS001")
+client.connect(mqttBroker)
+
+"""
+Accessing camera
+"""
+cam = cv2.VideoCapture(-1)
+ret, image = cam.read()
+if ret:
+    cv2.imshow('snap', image)
+    cv2.waitKey(0)
+    cv2.destroyWindow('snap')
+    cv2.imwrite('/home/pi/skripsi/node-client/image.jpg', image)
+cam.release()
+
+"""
+Subscribe to corresponding topic
+"""
+client.loop_start()
+client.subscribe("TS001")
+client.on_message = on_message
+
+"""
+Opening and sending image via HTTP
+"""
+image = open("image.jpg", "rb")
 server = "http://192.168.100.17:8000/api/upload"
-response = requests.post(server, files={"file":jisoo})
+data = {'trashcan': 'TS001',
+        'image': round(time.time()*1000)}
+response = requests.post(server, files={"file": image}, data=data)
+time.sleep(30)
+client.loop_stop()
 print(response)
