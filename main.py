@@ -3,11 +3,16 @@ import cv2
 import paho.mqtt.client as mqtt
 import time
 import datetime
+import board
+import neopixel
 
 
 def on_message(client, userdata, message):
     print("received message:", str(message.payload.decode("utf-8")))
 
+
+pixels = neopixel.NeoPixel(board.D18, 300)
+pixels.fill((0, 0, 0))
 
 """
 MQTT init
@@ -15,6 +20,12 @@ MQTT init
 mqttBroker = "192.168.100.17"
 client = mqtt.Client("TS001")
 client.connect(mqttBroker)
+
+"""
+LED
+"""
+pixels = neopixel.NeoPixel(board.D18, 300)
+pixels.fill((255, 255, 255))
 
 """
 Accessing camera
@@ -43,6 +54,7 @@ server = "http://192.168.100.17:8000/api/upload"
 data = {'trashcan': 'TS001',
         'image': round(time.time()*1000)}
 response = requests.post(server, files={"file": image}, data=data)
+pixels.fill((0, 0, 0))
 time.sleep(30)
 client.loop_stop()
 print(response)
